@@ -23,4 +23,4 @@ Documented gaps versus the Purplle challenge ideal; each is an explicit trade-of
 
 - **GPU optional** — Default Docker image runs API + dashboard on CPU; full CV stack uses `make up-full` or local Ultralytics install.
 
-See [FINAL_SUBMISSION_CHECKLIST.md](FINAL_SUBMISSION_CHECKLIST.md) for acceptance-gate verification steps.
+
