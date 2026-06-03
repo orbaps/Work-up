@@ -20,38 +20,39 @@ The platform turns CCTV into structured retail events, persists them in PostgreS
 
 The `api/` tree is a **compatibility shim**: `api/main.py` re-exports `app.main`, and `api/domain/` holds pure helpers that mirror business rules. New work should land in `app/` first.
 
-```mermaid
-flowchart TB
-  subgraph edge [Edge — pipeline/]
-    V[Video / RTSP / files]
-    D[YOLOv8 detect]
-    T[ByteTrack]
-    G[Geometry: lines, zones, queue]
-    S[Session + optional Re-ID]
-    E[emit.py → JSONL]
-    V --> D --> T --> G --> S --> E
-  end
+## Architecture Overview
 
-  subgraph platform [Platform — app/]
-    I[POST /events/ingest]
-    PG[(PostgreSQL)]
-    M[Metrics / Funnel / Anomalies engines]
-    H[/health]
-    I --> PG
-    PG --> M
-    PG --> H
-  end
-
-  subgraph clients [Clients]
-    R[ingest/replay]
-    DB[dashboard/ Streamlit]
-  end
-
-  E --> R
-  E -. optional live .-> I
-  R --> I
-  DB --> M
-  DB --> H
+```text
+Video / RTSP / Files
+        |
+        v
+YOLOv8 Detection
+        |
+        v
+ByteTrack Tracking
+        |
+        v
+Geometry Processing
+        |
+        v
+Session + Re-ID
+        |
+        v
+JSONL Events
+        |
+        +------------------+
+        |                  |
+        v                  v
+   Replay Client      Event Ingestion API
+                             |
+                             v
+                        PostgreSQL
+                             |
+                             v
+                Metrics / Funnel / Anomalies
+                             |
+                             v
+                   Streamlit Dashboard
 ```
 
 **Runtime topology (Docker Compose):** `postgres` → one-shot `migrate` (Alembic) → `api` → `dashboard`. The CV worker (`pipeline` service) is behind the `full` profile so reviewers can run API + DB without pulling GPU/OpenCV images.
