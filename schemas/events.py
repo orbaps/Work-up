@@ -24,6 +24,17 @@ class EventType(StrEnum):
     POSITION_SNAPSHOT = "position_snapshot"
     REENTRY = "reentry"
     STAFF_DETECTED = "staff_detected"
+    
+    # RetailOS Edge Events
+    SHELF_LOW = "shelf_low"
+    SHELF_EMPTY = "shelf_empty"
+    SKU_MISPLACED = "sku_misplaced"
+    STOCKOUT_PREDICTED = "stockout_predicted"
+    RESTOCK_REQUIRED = "restock_required"
+    RESTOCK_VERIFIED = "restock_verified"
+    STAFF_ACTION = "staff_action"
+    QUEUE_WARNING = "queue_warning"
+    QUEUE_CRITICAL = "queue_critical"
 
 
 class EventEnvelope(BaseModel):

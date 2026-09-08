@@ -448,10 +448,10 @@ def main() -> None:
     client = _api_client(settings.dashboard_api_url)
     _init_history()
 
-    st.title("Store Intelligence")
-    st.markdown("Real-time retail analytics — metrics, queues, conversion, anomalies")
+    st.title("RetailOS Edge")
+    st.markdown("Autonomous Edge AI Retail Intelligence Platform")
 
-    # Sidebar
+    # Sidebar — shared controls
     st.sidebar.header("Controls")
     store_options = [settings.default_store_id]
     try:
@@ -489,8 +489,17 @@ def main() -> None:
         if health.ingestion.lag_seconds is not None:
             st.sidebar.write(f"Ingestion lag: `{health.ingestion.lag_seconds:.0f}s`")
 
-    _live_fragment(client, store_id, window_minutes)
+    # Tab navigation
+    tab_analytics, tab_ops = st.tabs(["📊 Analytics", "🎯 Operations Center"])
+
+    with tab_analytics:
+        _live_fragment(client, store_id, window_minutes)
+
+    with tab_ops:
+        from dashboard.components.operations_center import render_operations_center
+        render_operations_center(settings.dashboard_api_url)
 
 
 if __name__ == "__main__":
     main()
+

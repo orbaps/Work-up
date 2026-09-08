@@ -1,0 +1,143 @@
+from pathlib import Path
+from typing import Literal, Optional
+
+import yaml
+from pydantic import BaseModel, Field
+
+
+class DatabaseConfig(BaseModel):
+    host: str = Field(default="localhost")
+    port: int = Field(default=5432)
+    database: str = Field(default="retail_shelf_monitoring")
+    user: str = Field(default="postgres")
+    password: str = Field(default="postgres")
+
+    @property
+    def url(self) -> str:
+        return (
+            f"postgresql://{self.user}:{self.password}@"
+            f"{self.host}:{self.port}/{self.database}"
+        )
+
+
+class RedisConfig(BaseModel):
+    host: str = Field(default="localhost")
+    port: int = Field(default=6379)
+    db: int = Field(default=0)
+    password: Optional[str] = Field(default=None)
+
+    @property
+    def url(self) -> str:
+        if self.password:
+            return f"redis://:{self.password}@{self.host}:{self.port}/{self.db}"
+        return f"redis://{self.host}:{self.port}/{self.db}"
+
+
+class LoggingConfig(BaseModel):
+    level: str = Field(default="INFO")
+    format: str = Field(default="json")
+    file_path: Optional[str] = Field(default=None)
+
+
+class MLConfig(BaseModel):
+    model_path: str = Field(default="models/yolov11_retail.xml")
+    pytorch_model: str | None = Field(default=None)
+    confidence_threshold: float = Field(default=0.35, ge=0, le=1)
+    nms_threshold: float = Field(default=0.45, ge=0, le=1)
+    device: str = Field(default="CPU")
+    inference_engine: Literal[
+        "openvino", "pytorch_tensorrt", "tensorrt", "onnx_runtime"
+    ] = Field(default="openvino")
+
+
+class SKUDetectionConfig(BaseModel):
+    model_path: str = Field(default="data/mobilenet_sku.xml")
+    pytorch_model: str | None = Field(default=None)
+    index_path: str = Field(default="data/sku_index.faiss")
+    device: str = Field(default="CPU")
+    top_k: int = Field(default=1, ge=1)
+    inference_engine: Literal[
+        "openvino", "pytorch_tensorrt", "tensorrt", "onnx_runtime"
+    ] = Field(default="openvino")
+    use_gpu: bool = Field(default=True)
+    gpu_id: int = Field(default=0)
+
+
+class GridConfig(BaseModel):
+    clustering_method: str = Field(default="dbscan")
+    eps: float = Field(default=15.0, gt=0)
+    min_samples: int = Field(default=2, ge=1)
+    position_tolerance: int = Field(default=1, ge=0)
+
+
+class TrackingConfig(BaseModel):
+    max_age: int = Field(default=30, ge=1)
+    min_hits: int = Field(default=3, ge=1)
+    iou_threshold: float = Field(default=0.3, ge=0, le=1)
+    max_bbox_width: float = Field(default=1920, gt=0)
+    max_bbox_height: float = Field(default=1080, gt=0)
+
+
+class FeatureMatchingConfig(BaseModel):
+    feature_type: str = Field(default="orb")
+    max_features: int = Field(default=5000, gt=0)
+    match_threshold: float = Field(default=0.75, ge=0, le=1)
+    min_matches: int = Field(default=10, ge=1)
+
+
+class HomographyConfig(BaseModel):
+    ransac_reproj_threshold: float = Field(default=5.0, gt=0)
+    min_inlier_ratio: float = Field(default=0.3, ge=0, le=1)
+    min_inliers: int = Field(default=10, ge=1)
+    max_iterations: int = Field(default=2000, gt=0)
+    min_alignment_confidence: float = Field(default=0.3, ge=0, le=1)
+
+
+class AlignmentConfig(BaseModel):
+    reference_dir: str = Field(default="data/reference_shelves")
+    output_dir: str = Field(default="data/aligned_frames")
+
+
+class AlertingConfig(BaseModel):
+    stream_name: str = Field(default="alerts")
+    consumer_group: str = Field(default="alert_processors")
+    consumer_name: str = Field(default="processor_1")
+    n_confirm: int = Field(default=3, ge=1)
+    n_clear: int = Field(default=2, ge=1)
+    state_timeout: int = Field(default=300, ge=1)
+
+
+class AppConfig(BaseModel):
+    app_name: str = Field(default="Retail Shelf Monitoring")
+    debug: bool = Field(default=False)
+    database: DatabaseConfig = Field(default_factory=DatabaseConfig)
+    redis: RedisConfig = Field(default_factory=RedisConfig)
+    logging: LoggingConfig = Field(default_factory=LoggingConfig)
+    ml: MLConfig = Field(default_factory=MLConfig)
+    sku_detection: SKUDetectionConfig = Field(default_factory=SKUDetectionConfig)
+    grid: GridConfig = Field(default_factory=GridConfig)
+    tracking: TrackingConfig = Field(default_factory=TrackingConfig)
+    feature_matching: FeatureMatchingConfig = Field(
+        default_factory=FeatureMatchingConfig
+    )
+    homography: HomographyConfig = Field(default_factory=HomographyConfig)
+    alignment: AlignmentConfig = Field(default_factory=AlignmentConfig)
+    alerting: AlertingConfig = Field(default_factory=AlertingConfig)
+
+    @classmethod
+    def from_yaml(cls, config_path: str) -> "AppConfig":
+        path = Path(config_path)
+        if not path.exists():
+            raise FileNotFoundError(f"Configuration file not found: {config_path}")
+
+        with open(path, "r") as f:
+            config_dict = yaml.safe_load(f) or {}
+
+        return cls(**config_dict)
+
+    @classmethod
+    def from_yaml_or_default(cls, config_path: str = "config.yaml") -> "AppConfig":
+        try:
+            return cls.from_yaml(config_path)
+        except FileNotFoundError:
+            return cls()

@@ -12,7 +12,7 @@ from app.database import close_database, init_database
 from app.dependencies import get_settings
 from app.exceptions import register_exception_handlers
 from app.middleware import RequestContextMiddleware
-from app.routers import analytics, events, health, metrics, stores
+from app.routers import analytics, events, health, metrics, operations, stores
 from app.settings import Settings
 from app.state import AppState
 from shared.logging import configure_logging, get_logger
@@ -93,6 +93,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(events.router, prefix="/v1")
     app.include_router(metrics.router, prefix="/v1")
     app.include_router(analytics.router, prefix="/v1")
+    app.include_router(operations.router)
 
     return app
 
