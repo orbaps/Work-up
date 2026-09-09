@@ -1,8 +1,12 @@
+import sys
 import asyncio
 import httpx
 import uuid
 from datetime import datetime, timedelta
 import random
+
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
 
 BASE_URL = "http://localhost:8000/v1/events/ingest"
 STORE_ID = "S-101"
