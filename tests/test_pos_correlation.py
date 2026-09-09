@@ -19,8 +19,14 @@ from schemas.api import MetricConfidence
 
 
 @pytest.mark.unit
-def test_load_pos_from_fixture() -> None:
-    path = Path("data/pos_transactions.csv")
+def test_load_pos_from_fixture(tmp_path: Path) -> None:
+    path = tmp_path / "pos_transactions.csv"
+    path.write_text(
+        "store_id,transaction_id,timestamp,basket_value_inr\n"
+        "store-001,tx1,2026-01-15T10:00:00Z,250.0\n"
+        "store-001,tx2,2026-01-15T11:00:00Z,450.0\n",
+        encoding="utf-8",
+    )
     now = datetime(2026, 1, 15, 12, 0, tzinfo=timezone.utc)
     rows = load_pos_transactions(
         path,
