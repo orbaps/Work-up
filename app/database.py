@@ -30,6 +30,11 @@ _session_factory: async_sessionmaker[AsyncSession] | None = None
 def create_engine(settings: Settings) -> AsyncEngine:
     """Build async engine with pool settings from configuration."""
     print("DATABASE_URL =", settings.database_url)
+    if "sqlite" in settings.database_url:
+        return create_async_engine(
+            settings.database_url,
+            echo=settings.app_env == "development",
+        )
     return create_async_engine(
         settings.database_url,
         pool_pre_ping=settings.db_pool_pre_ping,
